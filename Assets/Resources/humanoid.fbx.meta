@@ -1,0 +1,270 @@
+fileFormatVersion: 2
+guid: d60f076b0d53c704189a6b89b819ba9e
+timeCreated: 1512553395
+licenseType: Pro
+ModelImporter:
+  serializedVersion: 22
+  fileIDToRecycleName:
+    100000: Camera
+    100002: Humanoid
+    100004: //RootNode
+    100006: Humanoid:Head
+    100008: Humanoid:Head_End
+    100010: Humanoid:Hips
+    100012: Humanoid:LeftArm
+    100014: Humanoid:LeftArm_Dummy
+    100016: Humanoid:LeftArmRoll
+    100018: Humanoid:LeftFoot
+    100020: Humanoid:LeftForeArm
+    100022: Humanoid:LeftForeArmRoll
+    100024: Humanoid:LeftHand
+    100026: Humanoid:LeftHips_Dummy
+    100028: Humanoid:LeftIndex1
+    100030: Humanoid:LeftIndex2
+    100032: Humanoid:LeftIndex3
+    100034: Humanoid:LeftIndex_End
+    100036: Humanoid:LeftLeg
+    100038: Humanoid:LeftLegRoll
+    100040: Humanoid:LeftMiddle1
+    100042: Humanoid:LeftMiddle2
+    100044: Humanoid:LeftMiddle3
+    100046: Humanoid:LeftMiddle_End
+    100048: Humanoid:LeftPinky1
+    100050: Humanoid:LeftPinky2
+    100052: Humanoid:LeftPinky3
+    100054: Humanoid:LeftPinky_End
+    100056: Humanoid:LeftRing1
+    100058: Humanoid:LeftRing2
+    100060: Humanoid:LeftRing3
+    100062: Humanoid:LeftRing_End
+    100064: Humanoid:LeftShoulder
+    100066: Humanoid:LeftShoulder_Dummy
+    100068: Humanoid:LeftThumb1
+    100070: Humanoid:LeftThumb2
+    100072: Humanoid:LeftThumb3
+    100074: Humanoid:LeftThumb_End
+    100076: Humanoid:LeftToes
+    100078: Humanoid:LeftToes_End
+    100080: Humanoid:LeftUpLeg
+    100082: Humanoid:LeftUpLegRoll
+    100084: Humanoid:MaxToFilmbox_Root
+    100086: Humanoid:Neck
+    100088: Humanoid:Reference
+    100090: Humanoid:RightArm
+    100092: Humanoid:RightArm_Dummy
+    100094: Humanoid:RightArmRoll
+    100096: Humanoid:RightFoot
+    100098: Humanoid:RightForeArm
+    100100: Humanoid:RightForeArmRoll
+    100102: Humanoid:RightHand
+    100104: Humanoid:RightHips_Dummy
+    100106: Humanoid:RightIndex1
+    100108: Humanoid:RightIndex2
+    100110: Humanoid:RightIndex3
+    100112: Humanoid:RightIndex_End
+    100114: Humanoid:RightLeg
+    100116: Humanoid:RightLegRoll
+    100118: Humanoid:RightMiddle1
+    100120: Humanoid:RightMiddle2
+    100122: Humanoid:RightMiddle3
+    100124: Humanoid:RightMiddle_End
+    100126: Humanoid:RightPinky1
+    100128: Humanoid:RightPinky2
+    100130: Humanoid:RightPinky3
+    100132: Humanoid:RightPinky_End
+    100134: Humanoid:RightRing1
+    100136: Humanoid:RightRing2
+    100138: Humanoid:RightRing3
+    100140: Humanoid:RightRing_End
+    100142: Humanoid:RightShoulder
+    100144: Humanoid:RightShoulder_Dummy
+    100146: Humanoid:RightThumb1
+    100148: Humanoid:RightThumb2
+    100150: Humanoid:RightThumb3
+    100152: Humanoid:RightThumb_End
+    100154: Humanoid:RightToes
+    100156: Humanoid:RightToes_End
+    100158: Humanoid:RightUpLeg
+    100160: Humanoid:RightUpLegRoll
+    100162: Humanoid:Spine
+    100164: Humanoid:Spine1
+    100166: Humanoid:Spine2
+    100168: Humanoid:Spine_Dummy
+    100170: Light 1
+    400000: Camera
+    400002: Humanoid
+    400004: //RootNode
+    400006: Humanoid:Head
+    400008: Humanoid:Head_End
+    400010: Humanoid:Hips
+    400012: Humanoid:LeftArm
+    400014: Humanoid:LeftArm_Dummy
+    400016: Humanoid:LeftArmRoll
+    400018: Humanoid:LeftFoot
+    400020: Humanoid:LeftForeArm
+    400022: Humanoid:LeftForeArmRoll
+    400024: Humanoid:LeftHand
+    400026: Humanoid:LeftHips_Dummy
+    400028: Humanoid:LeftIndex1
+    400030: Humanoid:LeftIndex2
+    400032: Humanoid:LeftIndex3
+    400034: Humanoid:LeftIndex_End
+    400036: Humanoid:LeftLeg
+    400038: Humanoid:LeftLegRoll
+    400040: Humanoid:LeftMiddle1
+    400042: Humanoid:LeftMiddle2
+    400044: Humanoid:LeftMiddle3
+    400046: Humanoid:LeftMiddle_End
+    400048: Humanoid:LeftPinky1
+    400050: Humanoid:LeftPinky2
+    400052: Humanoid:LeftPinky3
+    400054: Humanoid:LeftPinky_End
+    400056: Humanoid:LeftRing1
+    400058: Humanoid:LeftRing2
+    400060: Humanoid:LeftRing3
+    400062: Humanoid:LeftRing_End
+    400064: Humanoid:LeftShoulder
+    400066: Humanoid:LeftShoulder_Dummy
+    400068: Humanoid:LeftThumb1
+    400070: Humanoid:LeftThumb2
+    400072: Humanoid:LeftThumb3
+    400074: Humanoid:LeftThumb_End
+    400076: Humanoid:LeftToes
+    400078: Humanoid:LeftToes_End
+    400080: Humanoid:LeftUpLeg
+    400082: Humanoid:LeftUpLegRoll
+    400084: Humanoid:MaxToFilmbox_Root
+    400086: Humanoid:Neck
+    400088: Humanoid:Reference
+    400090: Humanoid:RightArm
+    400092: Humanoid:RightArm_Dummy
+    400094: Humanoid:RightArmRoll
+    400096: Humanoid:RightFoot
+    400098: Humanoid:RightForeArm
+    400100: Humanoid:RightForeArmRoll
+    400102: Humanoid:RightHand
+    400104: Humanoid:RightHips_Dummy
+    400106: Humanoid:RightIndex1
+    400108: Humanoid:RightIndex2
+    400110: Humanoid:RightIndex3
+    400112: Humanoid:RightIndex_End
+    400114: Humanoid:RightLeg
+    400116: Humanoid:RightLegRoll
+    400118: Humanoid:RightMiddle1
+    400120: Humanoid:RightMiddle2
+    400122: Humanoid:RightMiddle3
+    400124: Humanoid:RightMiddle_End
+    400126: Humanoid:RightPinky1
+    400128: Humanoid:RightPinky2
+    400130: Humanoid:RightPinky3
+    400132: Humanoid:RightPinky_End
+    400134: Humanoid:RightRing1
+    400136: Humanoid:RightRing2
+    400138: Humanoid:RightRing3
+    400140: Humanoid:RightRing_End
+    400142: Humanoid:RightShoulder
+    400144: Humanoid:RightShoulder_Dummy
+    400146: Humanoid:RightThumb1
+    400148: Humanoid:RightThumb2
+    400150: Humanoid:RightThumb3
+    400152: Humanoid:RightThumb_End
+    400154: Humanoid:RightToes
+    400156: Humanoid:RightToes_End
+    400158: Humanoid:RightUpLeg
+    400160: Humanoid:RightUpLegRoll
+    400162: Humanoid:Spine
+    400164: Humanoid:Spine1
+    400166: Humanoid:Spine2
+    400168: Humanoid:Spine_Dummy
+    400170: Light 1
+    2000000: Camera
+    4300000: Humanoid
+    7400000: run
+    7400002: punch
+    7400004: shot
+    9500000: //RootNode
+    10800000: Light 1
+    13700000: Humanoid
+  externalObjects:
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: 7 - Default  ( Standard )  ( Standard )
+    second: {fileID: 2100000, guid: 651d0b35d9f6b024abf8df21453e0ee5, type: 2}
+  materials:
+    importMaterials: 1
+    materialName: 0
+    materialSearch: 1
+    materialLocation: 0
+  animations:
+    legacyGenerateAnimations: 4
+    bakeSimulation: 0
+    resampleCurves: 1
+    optimizeGameObjects: 0
+    motionNodeName: 
+    rigImportErrors: 
+    rigImportWarnings: 
+    animationImportErrors: 
+    animationImportWarnings: 
+    animationRetargetingWarnings: 
+    animationDoRetargetingWarnings: 0
+    importAnimatedCustomProperties: 0
+    animationCompression: 1
+    animationRotationError: 0.5
+    animationPositionError: 0.5
+    animationScaleError: 0.5
+    animationWrapMode: 0
+    extraExposedTransformPaths: []
+    extraUserProperties: []
+    clipAnimations: []
+    isReadable: 1
+  meshes:
+    lODScreenPercentages: []
+    globalScale: 1
+    meshCompression: 0
+    addColliders: 0
+    importVisibility: 1
+    importBlendShapes: 1
+    importCameras: 1
+    importLights: 1
+    swapUVChannels: 0
+    generateSecondaryUV: 0
+    useFileUnits: 1
+    optimizeMeshForGPU: 1
+    keepQuads: 0
+    weldVertices: 1
+    secondaryUVAngleDistortion: 8
+    secondaryUVAreaDistortion: 15.000001
+    secondaryUVHardAngle: 88
+    secondaryUVPackMargin: 4
+    useFileScale: 1
+  tangentSpace:
+    normalSmoothAngle: 60
+    normalImportMode: 0
+    tangentImportMode: 3
+    normalCalculationMode: 4
+  importAnimation: 1
+  copyAvatar: 0
+  humanDescription:
+    serializedVersion: 2
+    human: []
+    skeleton: []
+    armTwist: 0.5
+    foreArmTwist: 0.5
+    upperLegTwist: 0.5
+    legTwist: 0.5
+    armStretch: 0.05
+    legStretch: 0.05
+    feetSpacing: 0
+    rootMotionBoneName: 
+    rootMotionBoneRotation: {x: 0, y: 0, z: 0, w: 1}
+    hasTranslationDoF: 0
+    hasExtraRoot: 0
+    skeletonHasParents: 1
+  lastHumanDescriptionAvatarSource: {instanceID: 0}
+  animationType: 2
+  humanoidOversampling: 1
+  additionalBone: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
