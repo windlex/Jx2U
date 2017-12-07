@@ -4,6 +4,7 @@ using UnityEngine;
 using System;
 using System.IO;
 using System.Runtime.InteropServices;
+using System.Text;
 public class Utils {
 	[StructLayoutAttribute(LayoutKind.Sequential, CharSet = CharSet.Ansi, Pack = 4)]
 	struct mesh_head_t
@@ -70,6 +71,8 @@ public class Utils {
 			Marshal.FreeHGlobal(buffer);
 		}
 	}
+
+
 	//struct mesh_skin_info_t
 	//{
 	//	List<_mesh_bone_t> bone_vec;
@@ -102,7 +105,14 @@ public class Utils {
 	};
 	static int D3DXMESH_32BIT = 1;
 
-	public static unsafe Mesh LoadMesh(string filename, Mesh mesh)
+    struct matrix {
+		public float _11, _12, _13, _14;
+		public float _21, _22, _23, _24;
+		public float _31, _32, _33, _34;
+		public float _41, _42, _43, _44;
+    }
+
+	public static unsafe Mesh LoadMesh(string filename, Mesh mesh, SkinnedMeshRenderer rend, Transform transform)
 	{
 		byte[] filedata;
 		bool ret = OpenFile(filename, out filedata);
@@ -123,142 +133,6 @@ public class Utils {
 		{
 			return null;
 		}
-
-		#region bone
-		//skin_info = new mesh_skin_info_t;
-		//skin_info.d3dsi = 0;
-
-		////non-skinned mesh
-		//if (!head.skin_info_offset)
-		//	return;
-
-		////skinned mesh
-		//byte* ptr = (byte*)filedata.GetBufferPointer() + head.skin_info_offset;
-
-		//skin_info.bone_vec.resize(*(int*)ptr);
-		//ptr += 4;
-
-		//if (!skin_info.bone_vec.empty())
-		//{
-		//	//create d3dx skin info (may be larger than needed)
-		//	if (FAILED(D3DXCreateSkinInfoFVF(head.vertex_count, D3DFVF_XYZ | D3DFVF_NORMAL | D3DFVF_TEX1, (int)skin_info.bone_vec.size(), &skin_info.d3dsi)))
-		//	{
-		//		SAFE_DELETE(skin_info);
-		//		clear();
-		//		return;
-		//	}
-		//}
-
-		//for (int i = 0; i < skin_info.bone_vec.size(); i++)
-		//{
-		//	strcpy(skin_info.bone_vec[i].name, (char*)ptr);
-		//	ptr += 30;
-
-		//	skin_info.bone_vec[i].parent_name = (char*)ptr;
-		//	ptr += 30;
-
-		//	int num_child = *(int*)ptr;
-		//	ptr += 4 + num_child * 30;
-
-		//	skin_info.bone_vec[i].offset_matrix = *(matrix*)ptr;
-		//	ptr += 2 * sizeof(matrix);
-
-		//	int num_infl = *(int*)ptr;
-		//	ptr += 4;
-		//	if (num_infl > 0)
-		//	{
-		//		skin_info.real_bone_index_vec.push_back(i);
-		//		skin_info.d3dsi.SetBoneInfluence((int)skin_info.real_bone_index_vec.size() - 1, num_infl, (int*)ptr, (float*)(ptr + 4 * num_infl));
-		//		ptr += num_infl * (sizeof(int) + sizeof(float));
-		//	}
-		//}
-
-		//if (skin_info.real_bone_index_vec.empty())
-		//{
-		//	//non-skinned in fact
-		//	SAFE_RELEASE(skin_info.d3dsi);
-		//}
-
-		////compute derived bone members
-		////parent index
-		//for (int i = 0; i < skin_info.bone_vec.size(); i++)
-		//{
-		//	skin_info.bone_vec[i].parent_index = -1;
-
-		//	for (int j = 0; j < skin_info.bone_vec.size(); j++)
-		//	{
-		//		if (strcmp(skin_info.bone_vec[i].parent_name.c_str(), skin_info.bone_vec[j].name) == 0)
-		//		{
-		//			skin_info.bone_vec[i].parent_index = j;
-		//			skin_info.bone_vec[i].parent_name.clear();
-		//			break;
-		//		}
-		//	}
-		//}
-
-		////soft type
-		//for (int i = 0; i < skin_info.bone_vec.size(); i++)
-		//{
-		//	if (strncmp(skin_info.bone_vec[i].name, "FL_", 3) == 0)
-		//		skin_info.bone_vec[i].soft_type = _bone_soft_type_soft_;
-		//	else if (strncmp(skin_info.bone_vec[i].name, "GL_", 3) == 0)
-		//		skin_info.bone_vec[i].soft_type = _bone_soft_type_gravity_;
-		//	else if (strncmp(skin_info.bone_vec[i].name, "AL_", 3) == 0)
-		//		skin_info.bone_vec[i].soft_type = _bone_soft_type_adjsoft_;
-		//	else
-		//		skin_info.bone_vec[i].soft_type = _bone_soft_type_normal_;
-		//}
-
-		////soft level
-		//for (int i = 0; i < skin_info.bone_vec.size(); i++)
-		//	skin_info.bone_vec[i].soft_level = -1;
-		//for (int i = 0; i < skin_info.bone_vec.size(); i++)
-		//	_compute_bone_soft_level_recursive(skin_info, i);
-
-		////inv-offset matrix & relative matrix
-		//for (int i = 0; i < skin_info.bone_vec.size(); i++)
-		//{
-		//	D3DXMatrixInverse(&skin_info.bone_vec[i].inv_offset_matrix, 0, &skin_info.bone_vec[i].offset_matrix);
-		//	if (skin_info.bone_vec[i].parent_index != -1)
-		//		skin_info.bone_vec[i].relative_matrix = skin_info.bone_vec[i].inv_offset_matrix * skin_info.bone_vec[skin_info.bone_vec[i].parent_index].offset_matrix;
-		//	else
-		//		skin_info.bone_vec[i].relative_matrix = skin_info.bone_vec[i].inv_offset_matrix;
-		//}
-		////end of computing derived bone members
-
-		////sockets
-		//skin_info.socket_vec.resize(*(int*)ptr);
-		//ptr += 4;
-
-		//for (int i = 0; i < skin_info.socket_vec.size(); i++)
-		//{
-		//	strcpy(skin_info.socket_vec[i].name, (char*)ptr);
-		//	ptr += 30;
-
-		//	skin_info.socket_vec[i].parent_bone_name = (char*)ptr;
-		//	ptr += 30;
-
-		//	skin_info.socket_vec[i].relative_matrix = *(matrix*)ptr;
-		//	ptr += sizeof(matrix);
-		//}
-
-		////compute derived socket members
-		//for (int i = 0; i < skin_info.socket_vec.size(); i++)
-		//{
-		//	skin_info.socket_vec[i].parent_bone_index = -1;
-
-		//	for (int j = 0; j < skin_info.bone_vec.size(); j++)
-		//	{
-		//		if (strcmp(skin_info.socket_vec[i].parent_bone_name.c_str(), skin_info.bone_vec[j].name) == 0)
-		//		{
-		//			skin_info.socket_vec[i].parent_bone_index = j;
-		//			skin_info.socket_vec[i].parent_bone_name.clear();
-		//			break;
-		//		}
-		//	}
-		//}
-
-		#endregion
 
 		#region meshinfo
 		////create the original mesh 
@@ -291,7 +165,7 @@ public class Utils {
 			float3* ff = (float3*)v;
 			for (int i = 0; i < head.vertex_count; i++,ff++)
 			{
-				Debug.Log(string.Format("{0},{1},{2}", ff->x, ff->y, ff->z));
+				//Debug.Log(string.Format("{0},{1},{2}", ff->x, ff->y, ff->z));
 				//mesh.vertices[i] = new Vector3(ff->x, ff->y, ff->z);
 				ves.Add(new Vector3(ff->x, ff->y, ff->z));
 			}			
@@ -306,7 +180,7 @@ public class Utils {
 			float3* ff = (float3*)v;
 			for (int i = 0; i < head.vertex_count; i++, ff++)
 			{
-				Debug.Log(string.Format("{0},{1},{2}", ff->x, ff->y, ff->z));
+				//Debug.Log(string.Format("{0},{1},{2}", ff->x, ff->y, ff->z));
 				mesh.uv[i] = new Vector2(ff->x, ff->y);
 				uvs.Add(new Vector2(ff->x, 1 - ff->y));
 			}
@@ -369,7 +243,7 @@ public class Utils {
 					t = *b4;
 				else
 					t = *b2;
-				Debug.Log(string.Format("{0} {1}",i, t));
+				//Debug.Log(string.Format("{0} {1}",i, t));
 				mesh.triangles[i] = t;
 				trs[i] = t;
 			}
@@ -513,6 +387,270 @@ public class Utils {
 		//}
 		#endregion
 
+
+		#region bone
+		//skin_info = new mesh_skin_info_t;
+		//skin_info.d3dsi = 0;
+
+
+		// bindPoses was created earlier and was updated with the required matrix.
+		// The bindPoses array will now be assigned to the bindposes in the Mesh.
+
+
+		byte[] buff = new byte[30];
+		Transform[] bones;
+		Matrix4x4[] bindPoses;
+		BoneWeight[] boneweights = new BoneWeight[head.vertex_count];
+		Dictionary<string, GameObject> BoneList = new Dictionary<string,GameObject>();
+		Dictionary<string, string> BoneTree = new Dictionary<string,string>();
+
+		fixed (byte* ptrb = &filedata[head.skin_info_offset])
+		{
+			char* ptr = (char*)ptrb;
+			int bone_size = *(int*)ptr;
+			Debug.Log("Bone Size : " + bone_size);
+			bones = new Transform[bone_size];
+			bindPoses = new Matrix4x4[bone_size];
+			ptr += 4 / 2;
+
+			for (int i = 0; i < bone_size; i++)
+			{
+				//bone.name = (char *)ptr;
+				//Marshal.Copy(new IntPtr(ptr), buff, 0, 30);
+				//string name = Encoding.Default.GetString(buff);
+				string name = Marshal.PtrToStringAnsi(new IntPtr(ptr));
+				Debug.Log(name);
+				ptr += 30 / 2;
+
+				//bone.parent_name = (char *)ptr;
+				//Marshal.Copy(new IntPtr(ptr), buff, 0, 30);
+				string parent_anme = Marshal.PtrToStringAnsi(new IntPtr(ptr));
+				Debug.Log(parent_anme);
+				ptr += 30 / 2;
+
+				int num_child = *(int*)ptr;
+				ptr += (4 + num_child * 30) / 2;
+
+				//bone_vec[i].offset_matrix = *(matrix*)ptr;
+				//matrix offset_matrix = new matrix();
+				//Marshal.Copy(new IntPtr(ptr), offset_matrix, 0, sizeof(matrix));
+				matrix offset_matrix = (matrix)Marshal.PtrToStructure(new IntPtr(ptr), typeof(matrix));
+				Matrix4x4 om = (Matrix4x4)Marshal.PtrToStructure(new IntPtr(ptr), typeof(Matrix4x4));
+				Debug.Log(om);
+				ptr += (2 * sizeof(matrix)) / 2;
+
+				int num_infl = *(int*)ptr;
+				ptr += 4 / 2;
+				Debug.Log("num_infl : " + num_infl);
+
+				// weights
+				char *ptr1 = ptr;
+				char* ptr2 = ptr + num_infl * sizeof(int) / 2;
+				for (int w = 0; w < num_infl; w++)
+				{
+					//real_bone_index_vec.push_back(i);
+					//skin_info.d3dsi.SetBoneInfluence((int)skin_info.real_bone_index_vec.size() - 1, num_infl, (int*)ptr, (float*)(ptr + 4 * num_infl));
+					int vecIdx = *(int*)ptr1;
+					ptr1 += sizeof(int) / 2;
+
+					float weight = *(float*)ptr2;
+					ptr2 += sizeof(float) / 2;
+
+					//Debug.Log(string.Format("{0}, {1}, {2}", w, vecIdx, weight));
+					if (boneweights[vecIdx].boneIndex0 == 0)
+					{
+						boneweights[vecIdx].boneIndex0 = i;
+						boneweights[vecIdx].weight0 = weight;
+					}
+					else if (boneweights[vecIdx].boneIndex1 == 0)
+					{
+						boneweights[vecIdx].boneIndex1 = i;
+						boneweights[vecIdx].weight1 = weight;
+					}
+					else if (boneweights[vecIdx].boneIndex2 == 0)
+					{
+						boneweights[vecIdx].boneIndex2 = i;
+						boneweights[vecIdx].weight2 = weight;
+					}
+					else if (boneweights[vecIdx].boneIndex3 == 0)
+					{
+						boneweights[vecIdx].boneIndex3 = i;
+						boneweights[vecIdx].weight3 = weight;
+					}
+					else
+					{
+						Debug.LogWarning("Bone Weight Count Error!!!");
+					}
+				}
+				ptr += (num_infl * (sizeof(int) + sizeof(float))) / 2;
+
+				bones[i] = new GameObject(name).transform;
+				bones[i].parent = transform;
+				// Set the position relative to the parent
+				bones[i].localRotation = Quaternion.identity;
+				bones[i].localPosition = Vector3.zero;
+				BoneList.Add(name, bones[i].gameObject);
+				BoneTree.Add(name, parent_anme);
+				// The bind pose is bone's inverse transformation matrix
+				// In this case the matrix we also make this matrix relative to the root
+				// So that we can move the root game object around freely
+				//bindPoses[i] = bones[i].worldToLocalMatrix * transform.localToWorldMatrix * om;
+				bindPoses[i] = om;
+			}
+		}
+		foreach (var item in BoneTree)
+		{
+			string name = item.Key;
+			string parent = item.Value;
+			Debug.Log(string.Format("{0} -> {1}", name, parent));
+			GameObject go;
+			GameObject goParent;
+			if (BoneList.TryGetValue(parent, out goParent) && BoneList.TryGetValue(name, out go))
+			{
+				Debug.Log(go);
+				Debug.Log(goParent);
+				go.transform.SetParent(goParent.transform);	
+			}
+		}
+
+		mesh.bindposes = bindPoses;
+		mesh.boneWeights = boneweights;
+		// Assign bones and bind poses
+		rend.bones = bones;
+		rend.sharedMesh = mesh;
+
+		////non-skinned mesh
+		//if (!head.skin_info_offset)
+		//	return;
+
+		////skinned mesh
+		//byte* ptr = (byte*)filedata.GetBufferPointer() + head.skin_info_offset;
+
+		//skin_info.bone_vec.resize(*(int*)ptr);
+		//ptr += 4;
+
+		//if (!skin_info.bone_vec.empty())
+		//{
+		//	//create d3dx skin info (may be larger than needed)
+		//	if (FAILED(D3DXCreateSkinInfoFVF(head.vertex_count, D3DFVF_XYZ | D3DFVF_NORMAL | D3DFVF_TEX1, (int)skin_info.bone_vec.size(), &skin_info.d3dsi)))
+		//	{
+		//		SAFE_DELETE(skin_info);
+		//		clear();
+		//		return;
+		//	}
+		//}
+
+		//for (int i = 0; i < skin_info.bone_vec.size(); i++)
+		//{
+		//	strcpy(skin_info.bone_vec[i].name, (char*)ptr);
+		//	ptr += 30;
+
+		//	skin_info.bone_vec[i].parent_name = (char*)ptr;
+		//	ptr += 30;
+
+		//	int num_child = *(int*)ptr;
+		//	ptr += 4 + num_child * 30;
+
+		//	skin_info.bone_vec[i].offset_matrix = *(matrix*)ptr;
+		//	ptr += 2 * sizeof(matrix);
+
+		//	int num_infl = *(int*)ptr;
+		//	ptr += 4;
+		//	if (num_infl > 0)
+		//	{
+		//		skin_info.real_bone_index_vec.push_back(i);
+		//		skin_info.d3dsi.SetBoneInfluence((int)skin_info.real_bone_index_vec.size() - 1, num_infl, (int*)ptr, (float*)(ptr + 4 * num_infl));
+		//		ptr += num_infl * (sizeof(int) + sizeof(float));
+		//	}
+		//}
+
+		//if (skin_info.real_bone_index_vec.empty())
+		//{
+		//	//non-skinned in fact
+		//	SAFE_RELEASE(skin_info.d3dsi);
+		//}
+
+		////compute derived bone members
+		////parent index
+		//for (int i = 0; i < skin_info.bone_vec.size(); i++)
+		//{
+		//	skin_info.bone_vec[i].parent_index = -1;
+
+		//	for (int j = 0; j < skin_info.bone_vec.size(); j++)
+		//	{
+		//		if (strcmp(skin_info.bone_vec[i].parent_name.c_str(), skin_info.bone_vec[j].name) == 0)
+		//		{
+		//			skin_info.bone_vec[i].parent_index = j;
+		//			skin_info.bone_vec[i].parent_name.clear();
+		//			break;
+		//		}
+		//	}
+		//}
+
+		////soft type
+		//for (int i = 0; i < skin_info.bone_vec.size(); i++)
+		//{
+		//	if (strncmp(skin_info.bone_vec[i].name, "FL_", 3) == 0)
+		//		skin_info.bone_vec[i].soft_type = _bone_soft_type_soft_;
+		//	else if (strncmp(skin_info.bone_vec[i].name, "GL_", 3) == 0)
+		//		skin_info.bone_vec[i].soft_type = _bone_soft_type_gravity_;
+		//	else if (strncmp(skin_info.bone_vec[i].name, "AL_", 3) == 0)
+		//		skin_info.bone_vec[i].soft_type = _bone_soft_type_adjsoft_;
+		//	else
+		//		skin_info.bone_vec[i].soft_type = _bone_soft_type_normal_;
+		//}
+
+		////soft level
+		//for (int i = 0; i < skin_info.bone_vec.size(); i++)
+		//	skin_info.bone_vec[i].soft_level = -1;
+		//for (int i = 0; i < skin_info.bone_vec.size(); i++)
+		//	_compute_bone_soft_level_recursive(skin_info, i);
+
+		////inv-offset matrix & relative matrix
+		//for (int i = 0; i < skin_info.bone_vec.size(); i++)
+		//{
+		//	D3DXMatrixInverse(&skin_info.bone_vec[i].inv_offset_matrix, 0, &skin_info.bone_vec[i].offset_matrix);
+		//	if (skin_info.bone_vec[i].parent_index != -1)
+		//		skin_info.bone_vec[i].relative_matrix = skin_info.bone_vec[i].inv_offset_matrix * skin_info.bone_vec[skin_info.bone_vec[i].parent_index].offset_matrix;
+		//	else
+		//		skin_info.bone_vec[i].relative_matrix = skin_info.bone_vec[i].inv_offset_matrix;
+		//}
+		////end of computing derived bone members
+
+		////sockets
+		//skin_info.socket_vec.resize(*(int*)ptr);
+		//ptr += 4;
+
+		//for (int i = 0; i < skin_info.socket_vec.size(); i++)
+		//{
+		//	strcpy(skin_info.socket_vec[i].name, (char*)ptr);
+		//	ptr += 30;
+
+		//	skin_info.socket_vec[i].parent_bone_name = (char*)ptr;
+		//	ptr += 30;
+
+		//	skin_info.socket_vec[i].relative_matrix = *(matrix*)ptr;
+		//	ptr += sizeof(matrix);
+		//}
+
+		////compute derived socket members
+		//for (int i = 0; i < skin_info.socket_vec.size(); i++)
+		//{
+		//	skin_info.socket_vec[i].parent_bone_index = -1;
+
+		//	for (int j = 0; j < skin_info.bone_vec.size(); j++)
+		//	{
+		//		if (strcmp(skin_info.socket_vec[i].parent_bone_name.c_str(), skin_info.bone_vec[j].name) == 0)
+		//		{
+		//			skin_info.socket_vec[i].parent_bone_index = j;
+		//			skin_info.socket_vec[i].parent_bone_name.clear();
+		//			break;
+		//		}
+		//	}
+		//}
+
+		#endregion
+
 		//SAFE_RELEASE(d3dmesh);
 		//SAFE_RELEASE(skin_info.d3dsi);
 		//SAFE_RELEASE(filedata);
@@ -524,6 +662,134 @@ public class Utils {
 		data = new byte[TextFile.Length];
 		int ret = TextFile.Read(data, 0, (int)TextFile.Length);
 		TextFile.Close();
+		return true;
+	}
+
+	enum animation_type_t
+	{
+		animation_type_vertex = 1,
+		animation_type_vertex_relative = 2,
+		animation_type_bone = 10,
+	};
+
+	public static unsafe bool LoadAnim(string filename, Animation anim)
+	{
+		byte[] filedata;
+		OpenFile(filename, out filedata);
+
+		AnimationCurve curve = new AnimationCurve();
+		curve.keys = new Keyframe[] { new Keyframe(0, 0, 0, 0), new Keyframe(1, 3, 0, 0), new Keyframe(2, 0.0F, 0, 0) };
+
+		// Create the clip with the curve
+		AnimationClip clip = new AnimationClip();
+		clip.SetCurve("Lower", typeof(Transform), "m_LocalPosition.z", curve);
+		clip.legacy = true;
+
+		// Add and play the clip
+		clip.wrapMode = WrapMode.Loop;
+
+		fixed (byte* data = &filedata[0])
+		{
+			char *ptr = (char *)data;
+			if (*(int*)ptr != 0x414E494D)
+			{
+				return false;
+			}
+
+			ptr += 8;
+
+			//ani_vec.resize(*(int*)ptr);
+			int ani_size = *(int*)ptr;
+			ptr += 4;
+
+			int real_count = 0;
+			for (int i = 0; i < ani_size; i++)
+			{
+				int ani_type = *(int*)ptr;
+				//ani_vec[real_count].type = ani_type;
+				ptr += 4;
+
+				//strcpy(ani_vec[real_count].name, (char*)ptr);
+				string ani_name = Marshal.PtrToStringAnsi(new IntPtr(ptr));
+				Debug.Log(ani_name);
+				ptr += 30;
+
+				switch (ani_type)
+				{
+					case (int)animation_type_t.animation_type_bone:
+						{
+							ani_vec[real_count].function_count = *(int*)ptr;
+							ani_vec[real_count].func_vec.resize(*(int*)ptr);
+							ptr += 4;
+
+							ani_vec[real_count].frame_count = *(int*)ptr;
+							ptr += 4;
+
+							ani_vec[real_count].interval = *(float*)ptr;
+							ptr += sizeof(float);
+
+							for (int ifunc = 0; ifunc < ani_vec[real_count].func_vec.size(); ifunc++)
+							{
+								ani_vec[real_count].func_map[(char*)ptr] = ifunc;
+								ptr += 30;
+							}
+
+							for (int ifunc = 0; ifunc < ani_vec[real_count].func_vec.size(); ifunc++)
+							{
+								ani_vec[real_count].func_vec[ifunc].resize(ani_vec[real_count].frame_count);
+								memcpy(&ani_vec[real_count].func_vec[ifunc][0], ptr, sizeof(matrix) * ani_vec[real_count].frame_count);
+								ptr += sizeof(matrix) * ani_vec[real_count].frame_count;
+							}
+
+							real_count++;
+						}
+						break;
+					case (int)animation_type_t.animation_type_vertex:
+					case (int)animation_type_t.animation_type_vertex_relative:
+						{
+							ptr += 4;
+
+							ani_vec[real_count].function_count = *(int*)ptr;
+							ptr += 4;
+
+							ani_vec[real_count].frame_count = *(int*)ptr;
+							ptr += 4;
+
+							ani_vec[real_count].interval = *(float*)ptr;
+							ptr += sizeof(float);
+
+							ani_vec[real_count].vertex_index_vec.resize(ani_vec[real_count].function_count);
+							memcpy(&ani_vec[real_count].vertex_index_vec[0], ptr, 4 * ani_vec[real_count].function_count);
+							ptr += 4 * ani_vec[real_count].function_count;
+
+							ani_vec[real_count].vertex_value_vec.resize(ani_vec[real_count].function_count * ani_vec[real_count].frame_count);
+							memcpy(&ani_vec[real_count].vertex_value_vec[0], ptr, sizeof(float3) * ani_vec[real_count].function_count * ani_vec[real_count].frame_count);
+							ptr += sizeof(float3) * ani_vec[real_count].function_count * ani_vec[real_count].frame_count;
+
+							real_count++;
+						}
+						break;
+					case 100:
+						{
+							ptr += 4;
+
+							int blade_count = *(int*)ptr;
+							ptr += 4;
+
+							int frame_count = *(int*)ptr;
+							ptr += 4;
+
+							ptr += 4 + 8 * blade_count * frame_count;
+						}
+						break;
+				}
+			}
+
+			ani_vec.resize(real_count);
+		}
+
+		anim.AddClip(clip, "test");
+
 		return true;
 	}
 }

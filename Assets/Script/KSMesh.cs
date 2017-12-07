@@ -6,7 +6,7 @@ public class KSMesh : MonoBehaviour {
 
 	public Mesh	mesh;
 	public string	meshpath;
-
+	public string	anipath;
 	// Use this for initialization
 	void Start () {
 		//mesh = new Mesh ();
@@ -29,12 +29,14 @@ public class KSMesh : MonoBehaviour {
 
 		////http://blog.csdn.net/yupu56/article/details/45077217
 		////https://www.cnblogs.com/123ing/p/3912099.html
-		MeshFilter mf = gameObject.GetComponent<MeshFilter>();
-		mesh = mf.mesh;
-		Utils.LoadMesh(meshpath, mesh);
-		MeshRenderer mr = gameObject.GetComponent<MeshRenderer>();
-		//Material mMaterial = new Material(Shader.Find("Diffuse"));//材质  
-		//mr.material = mMaterial;
+		SkinnedMeshRenderer rend = gameObject.GetComponent<SkinnedMeshRenderer>();
+		mesh = new Mesh();
+
+		Utils.LoadMesh(meshpath, mesh, rend, transform);
+		Animation anim = GetComponent<Animation>();
+		Utils.LoadAnim(anipath, anim);
+		anim.Play("test");
+
 	}
 	
 	// Update is called once per frame

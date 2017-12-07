@@ -10,6 +10,6 @@ public class Toools {
 	public static void test()
 	{
 		Mesh mesh = new Mesh();
-		Utils.LoadMesh(@"d:\project\JX2U\Assets\Resources\001\001.Mesh", mesh);
+		//Utils.LoadMesh(@"d:\project\JX2U\Assets\Resources\001\001.Mesh", mesh);
 	}
 }
