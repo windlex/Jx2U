@@ -5,6 +5,49 @@ using System;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Text;
+
+public static class MatrixExtensions
+{
+	public static Matrix4x4 ToMatrix4x4(this Transform transform)
+	{
+		Matrix4x4 mat = new Matrix4x4();
+		mat.SetTRS(transform.localPosition, transform.localRotation, transform.localScale);
+		return mat;
+	}
+	public static Quaternion ExtractRotation(this Matrix4x4 matrix)
+	{
+		Vector3 forward;
+		forward.x = matrix.m02;
+		forward.y = matrix.m12;
+		forward.z = matrix.m22;
+
+		Vector3 upwards;
+		upwards.x = matrix.m01;
+		upwards.y = matrix.m11;
+		upwards.z = matrix.m21;
+
+		return Quaternion.LookRotation(forward, upwards);
+	}
+
+	public static Vector3 ExtractPosition(this Matrix4x4 matrix)
+	{
+		Vector3 position;
+		position.x = matrix.m03;
+		position.y = matrix.m13;
+		position.z = matrix.m23;
+		return position;
+	}
+
+	public static Vector3 ExtractScale(this Matrix4x4 matrix)
+	{
+		Vector3 scale;
+		scale.x = new Vector4(matrix.m00, matrix.m10, matrix.m20, matrix.m30).magnitude;
+		scale.y = new Vector4(matrix.m01, matrix.m11, matrix.m21, matrix.m31).magnitude;
+		scale.z = new Vector4(matrix.m02, matrix.m12, matrix.m22, matrix.m32).magnitude;
+		return scale;
+	}
+}
+
 public class Utils {
 	[StructLayoutAttribute(LayoutKind.Sequential, CharSet = CharSet.Ansi, Pack = 4)]
 	struct mesh_head_t
@@ -111,6 +154,7 @@ public class Utils {
 		public float _31, _32, _33, _34;
 		public float _41, _42, _43, _44;
     }
+	static Dictionary<string, string> BoneTree = new Dictionary<string, string>();
 
 	public static unsafe Mesh LoadMesh(string filename, Mesh mesh, SkinnedMeshRenderer rend, Transform transform)
 	{
@@ -402,7 +446,8 @@ public class Utils {
 		Matrix4x4[] bindPoses;
 		BoneWeight[] boneweights = new BoneWeight[head.vertex_count];
 		Dictionary<string, GameObject> BoneList = new Dictionary<string,GameObject>();
-		Dictionary<string, string> BoneTree = new Dictionary<string,string>();
+		Dictionary<string, Matrix4x4> MatrixList = new Dictionary<string,Matrix4x4>();
+		Dictionary<string, int> PoseList = new Dictionary<string,int>();
 
 		fixed (byte* ptrb = &filedata[head.skin_info_offset])
 		{
@@ -425,7 +470,7 @@ public class Utils {
 				//bone.parent_name = (char *)ptr;
 				//Marshal.Copy(new IntPtr(ptr), buff, 0, 30);
 				string parent_anme = Marshal.PtrToStringAnsi(new IntPtr(ptr));
-				Debug.Log(parent_anme);
+				//Debug.Log(parent_anme);
 				ptr += 30 / 2;
 
 				int num_child = *(int*)ptr;
@@ -437,7 +482,12 @@ public class Utils {
 				matrix offset_matrix = (matrix)Marshal.PtrToStructure(new IntPtr(ptr), typeof(matrix));
 				Matrix4x4 om = (Matrix4x4)Marshal.PtrToStructure(new IntPtr(ptr), typeof(Matrix4x4));
 				Debug.Log(om);
-				ptr += (2 * sizeof(matrix)) / 2;
+				ptr += sizeof(matrix) / 2;
+
+				Matrix4x4 bm = (Matrix4x4)Marshal.PtrToStructure(new IntPtr(ptr), typeof(Matrix4x4));
+				Debug.Log(bm);
+				//om = bm;
+				ptr += sizeof(matrix) / 2;
 
 				int num_infl = *(int*)ptr;
 				ptr += 4 / 2;
@@ -487,17 +537,24 @@ public class Utils {
 				bones[i] = new GameObject(name).transform;
 				bones[i].parent = transform;
 				// Set the position relative to the parent
-				bones[i].localRotation = Quaternion.identity;
-				bones[i].localPosition = Vector3.zero;
+				bones[i].localRotation = Quaternion.identity;// om.ExtractRotation();//
+				bones[i].localPosition = new Vector3(0, 0, 0);//om.ExtractPosition();//
+
+				//bones[i].localScale = om.ExtractScale();
 				BoneList.Add(name, bones[i].gameObject);
 				BoneTree.Add(name, parent_anme);
+				MatrixList.Add(name, om);
+				PoseList.Add(name, i);
 				// The bind pose is bone's inverse transformation matrix
 				// In this case the matrix we also make this matrix relative to the root
 				// So that we can move the root game object around freely
-				//bindPoses[i] = bones[i].worldToLocalMatrix * transform.localToWorldMatrix * om;
-				bindPoses[i] = om;
+				bindPoses[i] = Matrix4x4.identity;
+				//bindPoses[i] = bones[i].worldToLocalMatrix * transform.localToWorldMatrix;
+				//bindPoses[i] = om * transform.localToWorldMatrix;
+				//bindPoses[i] = om.inverse;
 			}
 		}
+		Debug.LogWarning("----------------------------------------------");
 		foreach (var item in BoneTree)
 		{
 			string name = item.Key;
@@ -505,16 +562,55 @@ public class Utils {
 			Debug.Log(string.Format("{0} -> {1}", name, parent));
 			GameObject go;
 			GameObject goParent;
-			if (BoneList.TryGetValue(parent, out goParent) && BoneList.TryGetValue(name, out go))
+			if (BoneList.TryGetValue(name, out go))
 			{
-				Debug.Log(go);
-				Debug.Log(goParent);
-				go.transform.SetParent(goParent.transform);	
+				Matrix4x4 om = MatrixList[name];
+				Debug.Log(om);
+				int pose = PoseList[name];
+				if (parent != "Scene Root" && BoneList.TryGetValue(parent, out goParent))
+				{
+					go.transform.SetParent(goParent.transform);
+				}
+			}
+		}
+		foreach (var item in BoneTree)
+		{
+			string name = item.Key;
+			string parent = item.Value;
+			Debug.Log(string.Format("2 {0} -> {1}", name, parent));
+			GameObject go;
+			GameObject goParent;
+			if (BoneList.TryGetValue(name, out go))
+			{
+				Matrix4x4 om = MatrixList[name];
+				Debug.Log(om);
+				int pose = PoseList[name];
+
+				go.transform.localPosition = om.ExtractPosition();
+				go.transform.localRotation = om.ExtractRotation();
+				//go.transform.localScale = om.ExtractScale();
+
+				if (parent != "Scene Root" && BoneList.TryGetValue(parent, out goParent))
+				{
+					//Matrix4x4 im = goParent.transform.ToMatrix4x4().inverse;
+					//go.transform.localRotation = (om * im).ExtractRotation();//Quaternion.identity;// 
+					//go.transform.localPosition = (om * im).ExtractPosition();//new Vector3(0, 0, 0);//
+					//go.transform.localScale = om.ExtractScale();
+					//bindPoses[pose] = om;//go.transform.worldToLocalMatrix * goParent.transform.localToWorldMatrix;
+				}
+				else
+				{
+					Debug.Log(string.Format("{0} no parent", name));
+					//go.transform.localPosition = om.ExtractPosition();
+					//go.transform.localRotation = om.ExtractRotation();
+					//go.transform.localScale = om.ExtractScale();
+					//bindPoses[pose] = om;//go.transform.worldToLocalMatrix * transform.localToWorldMatrix;
+				}
 			}
 		}
 
-		mesh.bindposes = bindPoses;
 		mesh.boneWeights = boneweights;
+		mesh.bindposes = bindPoses;
 		// Assign bones and bind poses
 		rend.bones = bones;
 		rend.sharedMesh = mesh;
@@ -677,17 +773,6 @@ public class Utils {
 		byte[] filedata;
 		OpenFile(filename, out filedata);
 
-		AnimationCurve curve = new AnimationCurve();
-		curve.keys = new Keyframe[] { new Keyframe(0, 0, 0, 0), new Keyframe(1, 3, 0, 0), new Keyframe(2, 0.0F, 0, 0) };
-
-		// Create the clip with the curve
-		AnimationClip clip = new AnimationClip();
-		clip.SetCurve("Lower", typeof(Transform), "m_LocalPosition.z", curve);
-		clip.legacy = true;
-
-		// Add and play the clip
-		clip.wrapMode = WrapMode.Loop;
-
 		fixed (byte* data = &filedata[0])
 		{
 			char *ptr = (char *)data;
@@ -696,54 +781,124 @@ public class Utils {
 				return false;
 			}
 
-			ptr += 8;
+			ptr += 8 / 2;
 
 			//ani_vec.resize(*(int*)ptr);
 			int ani_size = *(int*)ptr;
-			ptr += 4;
+			ptr += 4 / 2;
 
 			int real_count = 0;
 			for (int i = 0; i < ani_size; i++)
 			{
 				int ani_type = *(int*)ptr;
 				//ani_vec[real_count].type = ani_type;
-				ptr += 4;
+				ptr += 4 / 2;
 
 				//strcpy(ani_vec[real_count].name, (char*)ptr);
+				AnimationClip clip = new AnimationClip();
 				string ani_name = Marshal.PtrToStringAnsi(new IntPtr(ptr));
+				byte[] destination = new byte[30];
+				Marshal.Copy(new IntPtr(ptr), destination, 0, 30);
+				ani_name = Encoding.Default.GetString(destination);
 				Debug.Log(ani_name);
-				ptr += 30;
+
+				ptr += 30 / 2;
+
+				if (ani_type != (int)animation_type_t.animation_type_bone)
+						Debug.LogError("Unsupport Ani Type: " + ani_type);
 
 				switch (ani_type)
 				{
 					case (int)animation_type_t.animation_type_bone:
 						{
-							ani_vec[real_count].function_count = *(int*)ptr;
-							ani_vec[real_count].func_vec.resize(*(int*)ptr);
-							ptr += 4;
+							int function_count = *(int*)ptr;
+							//ani_vec[real_count].func_vec.resize(*(int*)ptr);
+							ptr += 4 / 2;
 
-							ani_vec[real_count].frame_count = *(int*)ptr;
-							ptr += 4;
+							int frame_count = *(int*)ptr;
+							ptr += 4 / 2;
 
-							ani_vec[real_count].interval = *(float*)ptr;
-							ptr += sizeof(float);
+							float interval = *(float*)ptr;
+							ptr += sizeof(float) / 2;
 
-							for (int ifunc = 0; ifunc < ani_vec[real_count].func_vec.size(); ifunc++)
+							char *ptr1 = ptr;
+							char *ptr2 = ptr + 30 * function_count / 2;
+							for (int ifunc = 0; ifunc < function_count; ifunc++)
 							{
-								ani_vec[real_count].func_map[(char*)ptr] = ifunc;
-								ptr += 30;
+								AnimationCurve[] curve = new AnimationCurve[10];
+								for (int c = 0; c < 10; c++)
+									curve[c] = new AnimationCurve();
+
+								string bone_name = Marshal.PtrToStringAnsi(new IntPtr(ptr1));
+								Debug.Log(bone_name);
+								string real_name = bone_name;
+								string parent = "";
+								while (BoneTree.TryGetValue(bone_name, out parent))
+								{
+									if (parent == "Scene Root")
+										break;
+									real_name = parent + "/" + real_name;
+									bone_name = parent;
+								}
+								bone_name = real_name;
+
+								//Debug.Log(bone_name);
+								//func_map[bone_name] = ifunc;
+								ptr1 += 30 / 2;
+								for (int f = 0; f < frame_count; f++)
+								{
+									float time = f * interval / 1000;
+									Matrix4x4 mat = (Matrix4x4)Marshal.PtrToStructure(new IntPtr(ptr2), typeof(Matrix4x4));
+									mat = mat.inverse;
+									Vector3 pos = mat.ExtractPosition();
+									Quaternion rot = mat.ExtractRotation();
+									Vector3 sc = mat.ExtractScale();
+									Debug.Log(mat);
+									Debug.Log(pos);
+									Debug.Log(rot.eulerAngles);
+									Debug.Log(sc);
+									curve[0].AddKey(time, pos.x);
+									curve[1].AddKey(time, pos.y);
+									curve[2].AddKey(time, pos.z);
+									curve[3].AddKey(time, rot.x);
+									curve[4].AddKey(time, rot.y);
+									curve[5].AddKey(time, rot.z);
+									curve[6].AddKey(time, rot.w);
+									curve[7].AddKey(time, sc.x);
+									curve[8].AddKey(time, sc.y);
+									curve[9].AddKey(time, sc.z);
+
+									ptr2 += sizeof(Matrix4x4) / 2;
+								}
+								clip.SetCurve(bone_name, typeof(Transform), "localPosition.x", curve[0]);
+								clip.SetCurve(bone_name, typeof(Transform), "localPosition.y", curve[1]);
+								clip.SetCurve(bone_name, typeof(Transform), "localPosition.z", curve[2]);
+								clip.SetCurve(bone_name, typeof(Transform), "localRotation.x", curve[3]);
+								clip.SetCurve(bone_name, typeof(Transform), "localRotation.y", curve[4]);
+								clip.SetCurve(bone_name, typeof(Transform), "localRotation.z", curve[5]);
+								clip.SetCurve(bone_name, typeof(Transform), "localRotation.w", curve[6]);
+								//clip.SetCurve(bone_name, typeof(Transform), "localScale.x", curve[7]);
+								//clip.SetCurve(bone_name, typeof(Transform), "localScale.y", curve[8]);
+								//clip.SetCurve(bone_name, typeof(Transform), "localScale.z", curve[9]);
 							}
 
-							for (int ifunc = 0; ifunc < ani_vec[real_count].func_vec.size(); ifunc++)
+							// Create the clip with the curve
+							clip.legacy = true;
+
+							// Add and play the clip
+							clip.wrapMode = WrapMode.Loop;
+							ptr += (30 + sizeof(matrix) * frame_count) * function_count / 2;
+							//for (int ifunc = 0; ifunc < function_count; ifunc++)
 							{
-								ani_vec[real_count].func_vec[ifunc].resize(ani_vec[real_count].frame_count);
-								memcpy(&ani_vec[real_count].func_vec[ifunc][0], ptr, sizeof(matrix) * ani_vec[real_count].frame_count);
-								ptr += sizeof(matrix) * ani_vec[real_count].frame_count;
+								//ani_vec[real_count].func_vec[ifunc].resize(ani_vec[real_count].frame_count);
+
+								//memcpy(&ani_vec[real_count].func_vec[ifunc][0], ptr, sizeof(matrix) * ani_vec[real_count].frame_count);
 							}
 
 							real_count++;
 						}
 						break;
+					/*
 					case (int)animation_type_t.animation_type_vertex:
 					case (int)animation_type_t.animation_type_vertex_relative:
 						{
@@ -782,13 +937,13 @@ public class Utils {
 							ptr += 4 + 8 * blade_count * frame_count;
 						}
 						break;
+					*/
 				}
+				anim.AddClip(clip, ani_name);
 			}
 
-			ani_vec.resize(real_count);
+			//ani_vec.resize(real_count);
 		}
-
-		anim.AddClip(clip, "test");
 
 		return true;
 	}
