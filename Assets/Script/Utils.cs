@@ -481,7 +481,7 @@ public class Utils {
 				//Marshal.Copy(new IntPtr(ptr), offset_matrix, 0, sizeof(matrix));
 				matrix offset_matrix = (matrix)Marshal.PtrToStructure(new IntPtr(ptr), typeof(matrix));
 				Matrix4x4 om = (Matrix4x4)Marshal.PtrToStructure(new IntPtr(ptr), typeof(Matrix4x4));
-				om = om.inverse;
+				//om = om.inverse;
 				Debug.Log(om);
 				//om = om.inverse;
 				if (!om.ValidTRS())
@@ -597,7 +597,7 @@ public class Utils {
 				int pose = PoseList[name];
 
 				go.transform.localPosition = om.ExtractPosition();
-				go.transform.localRotation = om.ExtractRotation();
+				//go.transform.localRotation = om.ExtractRotation();
 				//go.transform.localScale = om.ExtractScale();
 
 
