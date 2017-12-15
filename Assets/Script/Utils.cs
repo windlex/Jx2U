@@ -481,17 +481,21 @@ public class Utils {
 				//Marshal.Copy(new IntPtr(ptr), offset_matrix, 0, sizeof(matrix));
 				matrix offset_matrix = (matrix)Marshal.PtrToStructure(new IntPtr(ptr), typeof(matrix));
 				Matrix4x4 om = (Matrix4x4)Marshal.PtrToStructure(new IntPtr(ptr), typeof(Matrix4x4));
+				om = om.inverse;
 				Debug.Log(om);
+				//om = om.inverse;
+				if (!om.ValidTRS())
+					Debug.LogError("Not TRS");
 				ptr += sizeof(matrix) / 2;
 
 				Matrix4x4 bm = (Matrix4x4)Marshal.PtrToStructure(new IntPtr(ptr), typeof(Matrix4x4));
-				Debug.Log(bm);
+				//Debug.Log(bm);
 				//om = bm;
 				ptr += sizeof(matrix) / 2;
 
 				int num_infl = *(int*)ptr;
 				ptr += 4 / 2;
-				Debug.Log("num_infl : " + num_infl);
+				//Debug.Log("num_infl : " + num_infl);
 
 				// weights
 				char *ptr1 = ptr;
@@ -507,22 +511,22 @@ public class Utils {
 					ptr2 += sizeof(float) / 2;
 
 					//Debug.Log(string.Format("{0}, {1}, {2}", w, vecIdx, weight));
-					if (boneweights[vecIdx].boneIndex0 == 0)
+					if (boneweights[vecIdx].weight0 == 0)
 					{
 						boneweights[vecIdx].boneIndex0 = i;
 						boneweights[vecIdx].weight0 = weight;
 					}
-					else if (boneweights[vecIdx].boneIndex1 == 0)
+					else if (boneweights[vecIdx].weight1 == 0)
 					{
 						boneweights[vecIdx].boneIndex1 = i;
 						boneweights[vecIdx].weight1 = weight;
 					}
-					else if (boneweights[vecIdx].boneIndex2 == 0)
+					else if (boneweights[vecIdx].weight2 == 0)
 					{
 						boneweights[vecIdx].boneIndex2 = i;
 						boneweights[vecIdx].weight2 = weight;
 					}
-					else if (boneweights[vecIdx].boneIndex3 == 0)
+					else if (boneweights[vecIdx].weight3 == 0)
 					{
 						boneweights[vecIdx].boneIndex3 = i;
 						boneweights[vecIdx].weight3 = weight;
@@ -559,24 +563,30 @@ public class Utils {
 		{
 			string name = item.Key;
 			string parent = item.Value;
-			Debug.Log(string.Format("{0} -> {1}", name, parent));
 			GameObject go;
 			GameObject goParent;
-			if (BoneList.TryGetValue(name, out go))
+			if (BoneList.TryGetValue(name, out go) && BoneList.TryGetValue(parent, out goParent))
 			{
-				Matrix4x4 om = MatrixList[name];
-				Debug.Log(om);
-				int pose = PoseList[name];
-				if (parent != "Scene Root" && BoneList.TryGetValue(parent, out goParent))
-				{
-					go.transform.SetParent(goParent.transform);
-				}
+				go.transform.SetParent(goParent.transform);
 			}
 		}
-		foreach (var item in BoneTree)
+
+		List<Transform> childs = new List<Transform>();
+		childs.Add(transform);
+
+		while (childs.Count > 0)
 		{
-			string name = item.Key;
-			string parent = item.Value;
+			Transform trans = childs[0];
+			childs.Remove(trans);
+			for (int i = 0; i < trans.childCount; i++)
+			{
+				childs.Add(trans.GetChild(i));
+			}
+			string name = trans.name;
+			string parent;
+			if (!BoneTree.TryGetValue(name, out parent))
+				continue;
+
 			Debug.Log(string.Format("2 {0} -> {1}", name, parent));
 			GameObject go;
 			GameObject goParent;
@@ -590,13 +600,15 @@ public class Utils {
 				go.transform.localRotation = om.ExtractRotation();
 				//go.transform.localScale = om.ExtractScale();
 
+
+				bindPoses[pose] = go.transform.ToMatrix4x4().inverse;
 				if (parent != "Scene Root" && BoneList.TryGetValue(parent, out goParent))
 				{
 					//Matrix4x4 im = goParent.transform.ToMatrix4x4().inverse;
 					//go.transform.localRotation = (om * im).ExtractRotation();//Quaternion.identity;// 
 					//go.transform.localPosition = (om * im).ExtractPosition();//new Vector3(0, 0, 0);//
 					//go.transform.localScale = om.ExtractScale();
-					//bindPoses[pose] = om;//go.transform.worldToLocalMatrix * goParent.transform.localToWorldMatrix;
+					//bindPoses[pose] = go.transform.worldToLocalMatrix * goParent.transform.localToWorldMatrix;
 				}
 				else
 				{
@@ -604,7 +616,7 @@ public class Utils {
 					//go.transform.localPosition = om.ExtractPosition();
 					//go.transform.localRotation = om.ExtractRotation();
 					//go.transform.localScale = om.ExtractScale();
-					//bindPoses[pose] = om;//go.transform.worldToLocalMatrix * transform.localToWorldMatrix;
+					//bindPoses[pose] = go.transform.worldToLocalMatrix * transform.localToWorldMatrix;
 				}
 			}
 		}
@@ -830,7 +842,7 @@ public class Utils {
 									curve[c] = new AnimationCurve();
 
 								string bone_name = Marshal.PtrToStringAnsi(new IntPtr(ptr1));
-								Debug.Log(bone_name);
+								//Debug.Log(bone_name);
 								string real_name = bone_name;
 								string parent = "";
 								while (BoneTree.TryGetValue(bone_name, out parent))
@@ -853,10 +865,10 @@ public class Utils {
 									Vector3 pos = mat.ExtractPosition();
 									Quaternion rot = mat.ExtractRotation();
 									Vector3 sc = mat.ExtractScale();
-									Debug.Log(mat);
-									Debug.Log(pos);
-									Debug.Log(rot.eulerAngles);
-									Debug.Log(sc);
+									//Debug.Log(mat);
+									//Debug.Log(pos);
+									//Debug.Log(rot.eulerAngles);
+									//Debug.Log(sc);
 									curve[0].AddKey(time, pos.x);
 									curve[1].AddKey(time, pos.y);
 									curve[2].AddKey(time, pos.z);
@@ -873,10 +885,10 @@ public class Utils {
 								clip.SetCurve(bone_name, typeof(Transform), "localPosition.x", curve[0]);
 								clip.SetCurve(bone_name, typeof(Transform), "localPosition.y", curve[1]);
 								clip.SetCurve(bone_name, typeof(Transform), "localPosition.z", curve[2]);
-								clip.SetCurve(bone_name, typeof(Transform), "localRotation.x", curve[3]);
-								clip.SetCurve(bone_name, typeof(Transform), "localRotation.y", curve[4]);
-								clip.SetCurve(bone_name, typeof(Transform), "localRotation.z", curve[5]);
-								clip.SetCurve(bone_name, typeof(Transform), "localRotation.w", curve[6]);
+								//clip.SetCurve(bone_name, typeof(Transform), "localRotation.x", curve[3]);
+								//clip.SetCurve(bone_name, typeof(Transform), "localRotation.y", curve[4]);
+								//clip.SetCurve(bone_name, typeof(Transform), "localRotation.z", curve[5]);
+								//clip.SetCurve(bone_name, typeof(Transform), "localRotation.w", curve[6]);
 								//clip.SetCurve(bone_name, typeof(Transform), "localScale.x", curve[7]);
 								//clip.SetCurve(bone_name, typeof(Transform), "localScale.y", curve[8]);
 								//clip.SetCurve(bone_name, typeof(Transform), "localScale.z", curve[9]);

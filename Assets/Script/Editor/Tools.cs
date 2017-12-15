@@ -12,4 +12,10 @@ public class Toools {
 		Mesh mesh = new Mesh();
 		//Utils.LoadMesh(@"d:\project\JX2U\Assets\Resources\001\001.Mesh", mesh);
 	}
+
+	[MenuItem("Jx2U/InitCore")]
+	public static void InitCore()
+	{
+		CoreHandler.Init();
+	}
 }
