@@ -24,6 +24,9 @@ public class KSSprite : MonoBehaviour {
 	}
 	public void SetSprite(Sprite sp)
 	{
-		sr.sprite = sp;
+        sr = gameObject.GetComponent<SpriteRenderer>();
+        if (!sr)
+            sr = gameObject.AddComponent<SpriteRenderer>();
+        sr.sprite = sp;
 	}
 }

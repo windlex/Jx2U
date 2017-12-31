@@ -3,7 +3,12 @@ using System.Collections.Generic;
 using UnityEngine;
 
 public class SprMgr : MonoBehaviour {
-	public Dictionary<long, KSSprite> SprMap = new Dictionary<long, KSpr>();
+    static SprMgr _instance;
+    public static SprMgr GetInstance()
+    {
+        return _instance;
+    }
+    public Dictionary<long, KSSprite> SprMap = new Dictionary<long, KSSprite>();
 	public Dictionary<string, List<Texture2D>> SprResMap = new Dictionary<string, List<Texture2D>>();
 	
 	#region 2 Buffer for View
@@ -12,21 +17,23 @@ public class SprMgr : MonoBehaviour {
 	public GameObject del;
 	public void Swap()
 	{
-		for each child in back
+        Transform[] grandFa = back.GetComponentsInChildren<Transform>();
+
+        foreach (Transform child in grandFa)  
 		{
-			child.transform.present = del.transform;
+			child.transform.parent = del.transform;
 		}
 		GameObject temp = back;
 		back = front;
 		front = temp;
-		front.active = true;
-		back.active = false;
+		front.SetActive(true);
+		back.SetActive(false);
 	}
 	#endregion
 
 	// Use this for initialization
 	void Start () {
-		
+        _instance = this;
 	}
 	
 	// Update is called once per frame
@@ -43,43 +50,48 @@ public class SprMgr : MonoBehaviour {
 		return null;
 	}
 
-	public Sprite LoadSpr(string filename, int nFrame)
+    public Texture2D LoadSpr(string filename, int nFrame)
 	{
 		//filename = filename.lower();
-		List<Texture2D> SprResList = SprResMap.TryGetValue(filename);
-		if (!SprResList)
+        List<Texture2D> SprResList;
+        SprResMap.TryGetValue(filename, out SprResList);
+		if (SprResList == null)
 		{
 			SprResList = new List<Texture2D>();
-			Utils.LoadSpr(filename, ref SprResList);
-			SprResMap.Add(filename, SprResList);
+			if (Utils.LoadSpr(filename, ref SprResList))
+    			SprResMap.Add(filename, SprResList);
 		}
-		if (SprResList.Count < nFrame)
+		if (SprResList.Count <= nFrame)
 			return null;
 		return SprResList[nFrame];
 	}
 	public void RemoveSpr(KSSprite spr)
 	{
-		SprMap.Earse(spr);
+		//SprMap.(spr);
 	}
-	public static bool DrawSpr(long cmd_addr, spr_cmd cmds)
+    public static bool DrawSpr(long cmd_addr, pic_cmd_t cmds)
 	{
-		this = SprMap.GetInstance();
-		GameObject go = GetSpr(cmd_addr);
+        
+        SprMgr self = SprMgr.GetInstance();
+        GameObject go = self.GetSpr(cmd_addr);
 		if (!go)
 		{
-			Texture2D tx = LoadSpr(cmds.szImage, nFrame);
+            string szImage = GLB.GBK.GetString(cmds.filename);
+            Debug.Log(szImage);
+            Texture2D tx = self.LoadSpr(szImage, cmds.frame_index);
 			if (!tx)
 			{
-				Debug.LogError("Load Spr Error: " + cmds.szImage);
+                Debug.LogError("Load Spr Error: " + szImage);
 				return false;
 			}
-			Sprite sp = Sprite.Create(tx, new Rect(0f,0f,tx.Width,tx.Height), new Vector2(0.5f, 0.5f));
+			Sprite sp = Sprite.Create(tx, new Rect(0f,0f,tx.width,tx.height), new Vector2(0.5f, 0.5f));
 			go = new GameObject();
 			KSSprite ksp = go.AddComponent<KSSprite>();
 			ksp.SetSprite(sp);
-			SprMap.Add(cmd_addr, ksp);
+            self.SprMap.Add(cmd_addr, ksp);
 		}
-		go.transform.present = front.transform;
-		go.transform.localposition = new Vector3(cmds.pos.x, cmds.pos.y, cmds.pos.z);
+		go.transform.parent = self.front.transform;
+		go.transform.localPosition = new Vector3(cmds.pos1.x, cmds.pos1.y, cmds.pos1.z);
+        return true;
 	}
 }

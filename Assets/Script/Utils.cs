@@ -6,6 +6,9 @@ using System.IO;
 using System.Runtime.InteropServices;
 using System.Text;
 
+using byte2 = System.Int16;
+using byte4 = System.Int32;
+
 public static class MatrixExtensions
 {
 	public static Matrix4x4 ToMatrix4x4(this Transform transform)
@@ -125,14 +128,14 @@ public class Utils {
 	//};
 
 	[StructLayoutAttribute(LayoutKind.Sequential, CharSet = CharSet.Ansi, Pack = 1)]
-	struct float2
+	public struct float2
 	{
 		public float x;
 		public float y;
 	}
 
 	[StructLayoutAttribute(LayoutKind.Sequential, CharSet = CharSet.Ansi, Pack = 1)]
-	struct float3
+	public struct float3
 	{
 		public float x;
 		public float y;
@@ -148,7 +151,8 @@ public class Utils {
 	};
 	static int D3DXMESH_32BIT = 1;
 
-    struct matrix {
+    public struct matrix
+    {
 		public float _11, _12, _13, _14;
 		public float _21, _22, _23, _24;
 		public float _31, _32, _33, _34;
@@ -597,7 +601,7 @@ public class Utils {
 				int pose = PoseList[name];
 
 				go.transform.localPosition = om.ExtractPosition();
-				//go.transform.localRotation = om.ExtractRotation();
+				go.transform.localRotation = om.ExtractRotation();
 				//go.transform.localScale = om.ExtractScale();
 
 
@@ -766,11 +770,20 @@ public class Utils {
 	}
 	public static bool OpenFile(string filename, out byte[] data)
 	{
-		FileStream TextFile = File.Open(filename, FileMode.Open);
-		data = new byte[TextFile.Length];
-		int ret = TextFile.Read(data, 0, (int)TextFile.Length);
-		TextFile.Close();
-		return true;
+        try
+        {
+            FileStream TextFile = File.Open(filename, FileMode.Open);
+            data = new byte[TextFile.Length];
+            int ret = TextFile.Read(data, 0, (int)TextFile.Length);
+            TextFile.Close();
+            return true;
+        }
+        catch (Exception e)
+        {
+            //Debug.LogError(e);
+            data = null;
+            return false;
+        }
 	}
 
 	enum animation_type_t
@@ -959,4 +972,180 @@ public class Utils {
 
 		return true;
 	}
+
+  	[StructLayoutAttribute(LayoutKind.Sequential, CharSet = CharSet.Ansi, Pack = 4)]
+  	public struct head_t
+	{
+		[MarshalAs(UnmanagedType.ByValArray, SizeConst = 4)]
+		public byte[]	comment;	
+		public byte2	width;		
+		public byte2	height;		
+		public byte2	center_x;	
+		public byte2	center_y;	
+		public byte2	frame_count;
+		public byte2	pal_entry_count;
+		public byte2	direction_count;
+		public byte2	interval;
+		[MarshalAs(UnmanagedType.ByValArray, SizeConst = 6)]
+		public byte2[]	reserved;
+	};
+
+	[StructLayoutAttribute(LayoutKind.Sequential, CharSet = CharSet.Ansi, Pack = 4)]
+    public struct offset_table_t
+	{
+        public byte4 offset;
+        public byte4 size;
+	};
+
+ 	[StructLayoutAttribute(LayoutKind.Sequential, CharSet = CharSet.Ansi, Pack = 4)]
+	public struct SPRFRAME_NEW
+	{
+		public byte2	Width;		// 帧最小宽度
+		public byte2	Height;		// 帧最小高度
+		public byte2	OffsetX;	// 水平位移（相对于原图左上角）
+		public byte2	OffsetY;	// 垂直位移（相对于原图左上角）
+		[MarshalAs(UnmanagedType.ByValArray, SizeConst = 1)]
+    	public byte[]	Sprite;	// RLE压缩图形数据
+	};
+
+    public static unsafe bool LoadSpr(string filename, ref List<Texture2D> SprResList)
+    {
+        byte[] filedata;
+        if (!OpenFile(filename, out filedata))
+        {
+            try
+            {
+                int size = CoreWrapper.GetFileSize(GLB.GBK.GetBytes(filename));
+                Debug.Log("Loading " + filename + ", Size " + size);
+                if (size <= 0)
+                    return false;
+                IntPtr read = CoreWrapper.LoadFile(GLB.GBK.GetBytes(filename));
+                filedata = new byte[size];
+                Marshal.Copy(read, filedata, 0, size);
+            }
+            catch (Exception e)
+            {
+                Debug.Log(e);
+            }
+
+        }
+        if (filedata == null)
+        {
+            Debug.LogError("Load Image Error: " + filename);
+            return false;
+        }
+        if (filename.Substring(filename.Length - 3) == "spr")
+            return LoadSpr(filename, filedata, ref SprResList);
+        else
+        {
+            Texture2D tx = new Texture2D(1,1);
+            tx.LoadImage(filedata);
+            SprResList.Add(tx);
+            return true;
+        }
+    }
+    public static unsafe bool LoadSpr(string filename, byte[] filedata, ref List<Texture2D> SprResList)
+    {
+        //Head
+ 		head_t head = (head_t)BytesToStruct(filedata, typeof(head_t));
+        //Debug.Log(head.width);
+
+        if (head.reserved[0] != 0)
+            Debug.LogError("NEW FRAME!!!" + filename);
+
+        //Palette Colors
+        int colors = head.pal_entry_count;
+        Debug.Log("Color: " + colors);
+        Color32[] PaletteColors = new Color32[colors];
+        long off = 0;
+        fixed (byte* data = &filedata[32]) // sizeof(head_t)
+        {
+            byte *c = data;
+            byte a = 0xff;
+            for (int i = 0; i < colors; i++)
+            {
+                byte r,g,b;
+                r = *c++;
+                g = *c++;
+                b = *c++;
+                PaletteColors[i] = new Color32(r,g,b,a);
+                //Debug.Log(string.Format("Color[{0}]: {1}", i, PaletteColors[i]));
+            }
+            off = c - data + 32;
+        }
+        // frame offset
+        int frameCount = head.frame_count;
+        offset_table_t[] frames = new offset_table_t[frameCount];
+        fixed (byte *data = &filedata[off])
+        {
+            int *pdata = (int *)data;
+            for (int i = 0; i < frameCount; i++)
+            {
+                frames[i].offset = *pdata++;
+                frames[i].size = *pdata++;
+                Debug.Log(string.Format("Frames {0}: [{1}, {2}]", i, frames[i].offset, frames[i].size));
+            }
+            off += (byte*)pdata - data;
+        }
+
+        // frames
+        int w = head.width;
+        int h = head.height;
+
+        fixed (byte* data = &filedata[off])
+        {
+            byte* c = data;
+            for (int f = 0; f < head.frame_count; f++)
+            {
+                SPRFRAME_NEW spr = (SPRFRAME_NEW)Marshal.PtrToStructure(new IntPtr(c), typeof(SPRFRAME_NEW));
+                c += 8;
+                w = spr.Width;
+                h = spr.Height;
+                Debug.Log(string.Format("new frame {0} x {1}", w, h));
+                Color32[] pixels = new Color32[w * h];
+                int nNumLines = h;
+                int p = 0;
+                for (; nNumLines > 0; nNumLines--)
+                {
+                    int nLineLen = w;
+                    while (nLineLen > 0)
+                    {
+                        int nNumPixels = *c++;
+                        int nAlpha = *c++;
+                        nLineLen -= nNumPixels;
+                        for (int n = 0; n < nNumPixels; n++)
+                        {
+                            try
+                            {
+                                if (nAlpha == 0)
+                                {
+                                    pixels[p++] = new Color32(0, 0, 0, 0);
+                                }
+                                else
+                                {
+                                    pixels[p++] = PaletteColors[*c++];
+                                }
+                            }
+                            catch (Exception e)
+                            {
+                                Debug.LogError(e);
+                                Debug.Log(p);
+                                Debug.Log(w * h);
+                                return false;
+                            }
+                        }
+                    }
+                }
+                Debug.Log(p);
+                Debug.Log(c - data);
+                Texture2D tx = new Texture2D(w, h);
+                tx.SetPixels32(pixels);
+                tx.Apply(false);
+
+                SprResList.Add(tx);
+            }
+        }
+
+        return true;
+    }
 }

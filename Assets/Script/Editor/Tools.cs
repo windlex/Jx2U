@@ -16,6 +16,6 @@ public class Toools {
 	[MenuItem("Jx2U/InitCore")]
 	public static void InitCore()
 	{
-		CoreHandler.Init();
+		//CoreHandler.Init();
 	}
 }
