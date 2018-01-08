@@ -94,4 +94,9 @@ public class SprMgr : MonoBehaviour {
 		go.transform.localPosition = new Vector3(cmds.pos1.x, cmds.pos1.y, cmds.pos1.z);
         return true;
 	}
+
+	public static bool DrawObject(long cmd_addr, obj_cmd cmds)
+	{
+		
+	}
 }

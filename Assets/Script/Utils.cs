@@ -183,7 +183,7 @@ public class Utils {
 		}
 
 		#region meshinfo
-		////create the original mesh 
+		// create the original mesh 
 		int mesh_option = 0;
 		//if (!skin_info.d3dsi && (gpu().get_creation_parameters().vertex_processing_method == _gpu_vertex_processing_method_hardware_ || gpu().get_creation_parameters().vertex_processing_method == _gpu_vertex_processing_method_purehardware_))
 		//	mesh_option |= D3DXMESH_MANAGED;		//non-skinned && hardware-vp
@@ -421,15 +421,6 @@ public class Utils {
 
 		//	//decl will be generated later
 
-		//	HRESULT r = D3DXSaveMeshToX(
-		//		"OUT.X",
-		//		blended_mesh,
-		//		adj,
-		//		NULL, //_In_ const D3DXMATERIAL       *pMaterials,
-		//		NULL, //_In_ const D3DXEFFECTINSTANCE *pEffectInstances,
-		//		NULL, //_In_       DWORD              NumMaterials,
-		//		0	//D3DXF_FILEFORMAT_TEXT
-		//		);
 		//	SAFE_DELETE_ARRAY(adj);
 		//	SAFE_RELEASE(blended_mesh);
 		//}
