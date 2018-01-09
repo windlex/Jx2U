@@ -36,8 +36,10 @@ public class KSpr : MonoBehaviour {
         //Sprite newsp = Sprite.Create(tx, new Rect(0f, 0f, 100f, 100f), new Vector2(0.5f, 0.5f));
 
         Texture2D tx = SprMgr.GetInstance().LoadSpr(sprPath, 0);
-        Sprite newsp = Sprite.Create(tx, new Rect(0f, 0f, tx.width, tx.height), new Vector2(0.5f, 0.5f));
+        Sprite newsp = Sprite.Create(tx, new Rect(0f, 0f, tx.width, tx.height), new Vector2(0f, 1f));
         sr.sprite = newsp;
+        sr.flipY = true;
+        //transform.localPosition -= new Vector3(tx.width / 200, tx.height / 200, 0f);
     }
 
     int interval = 60;
@@ -47,10 +49,15 @@ public class KSpr : MonoBehaviour {
         interval--;
         if (interval == 0)
         {
-            interval = 60;
             nFrame++;
+            interval = 60;
             Texture2D tx = SprMgr.GetInstance().LoadSpr(sprPath, nFrame);
-            Sprite newsp = Sprite.Create(tx, new Rect(0f, 0f, tx.width, tx.height), new Vector2(0.5f, 0.5f));
+            if (tx == null)
+            {
+                nFrame = -1;
+                return;
+            }
+            Sprite newsp = Sprite.Create(tx, new Rect(0f, 0f, tx.width, tx.height), new Vector2(0.0f, 1.0f));
             sr.sprite = newsp;
         }
 	}

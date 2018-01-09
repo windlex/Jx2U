@@ -9,7 +9,7 @@ using System.Text;
 using System.Runtime;
 using System.Runtime.InteropServices;
 
-public partial class CoreHandler
+public partial class UR_Register
 {
 #if UNITY_IPHONE && !UNITY_EDITOR
     const string CoreDLL = "__Internal";
@@ -25,7 +25,7 @@ public partial class CoreHandler
         RegisterGet3DDevice(UnityRepresent.Get3DDevice);
         RegisterCreateAFont(UnityRepresent.CreateAFont);
         RegisterOutputText(UnityRepresent.OutputText);
-        //RegisterOutputRichText(UnityRepresent.OutputRichText);
+        RegisterOutputRichText(UnityRepresent.OutputRichText);
         //RegisterLocateRichText(UnityRepresent.LocateRichText);
         RegisterReleaseAFont(UnityRepresent.ReleaseAFont);
         RegisterCreateImage(UnityRepresent.CreateImage);
@@ -130,15 +130,15 @@ public partial class CoreHandler
     );
 
 
-    //[DllImport("CoreWrapper.dll", CharSet = CharSet.Ansi, EntryPoint = "RegisterOutputRichText", ExactSpelling = false, CallingConvention = CallingConvention.StdCall)]
-    //private static extern void RegisterOutputRichText(FnOutputRichText callback); 
-    //delegate int FnOutputRichText(
-    //    int  nFontId, 
-    //    KOutputTextParam*  pParam, 
-    //    IntPtr  psText, 
-    //    int  nCount , 
-    //    int  nLineWidth  
-    //);
+    [DllImport("CoreWrapper.dll", CharSet = CharSet.Ansi, EntryPoint = "RegisterOutputRichText", ExactSpelling = false, CallingConvention = CallingConvention.StdCall)]
+    private static extern void RegisterOutputRichText(FnOutputRichText callback);
+    delegate int FnOutputRichText(
+        int nFontId,
+        IntPtr pParam,
+        IntPtr psText,
+        int nCount,
+        int nLineWidth
+    );
 
 
     //[DllImport("CoreWrapper.dll", CharSet = CharSet.Ansi, EntryPoint = "RegisterLocateRichText", ExactSpelling = false, CallingConvention = CallingConvention.StdCall)]

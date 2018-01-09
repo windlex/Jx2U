@@ -183,7 +183,7 @@ public class Utils {
 		}
 
 		#region meshinfo
-		// create the original mesh 
+		////create the original mesh 
 		int mesh_option = 0;
 		//if (!skin_info.d3dsi && (gpu().get_creation_parameters().vertex_processing_method == _gpu_vertex_processing_method_hardware_ || gpu().get_creation_parameters().vertex_processing_method == _gpu_vertex_processing_method_purehardware_))
 		//	mesh_option |= D3DXMESH_MANAGED;		//non-skinned && hardware-vp
@@ -1007,7 +1007,8 @@ public class Utils {
             try
             {
                 int size = CoreWrapper.GetFileSize(GLB.GBK.GetBytes(filename));
-                Debug.Log("Loading " + filename + ", Size " + size);
+                Debug.Log("Loading " + filename);
+                //Debug.Log("Size " + size);
                 if (size <= 0)
                     return false;
                 IntPtr read = CoreWrapper.LoadFile(GLB.GBK.GetBytes(filename));
@@ -1025,11 +1026,12 @@ public class Utils {
             Debug.LogError("Load Image Error: " + filename);
             return false;
         }
-        if (filename.Substring(filename.Length - 3) == "spr")
+        if (filename.IndexOf(".spr") > 0)
             return LoadSpr(filename, filedata, ref SprResList);
         else
         {
-            Texture2D tx = new Texture2D(1,1);
+            //Debug.LogError("Load Image" + filename);
+            Texture2D tx = new Texture2D(1, 1);
             tx.LoadImage(filedata);
             SprResList.Add(tx);
             return true;
@@ -1037,6 +1039,7 @@ public class Utils {
     }
     public static unsafe bool LoadSpr(string filename, byte[] filedata, ref List<Texture2D> SprResList)
     {
+        //Debug.LogError("LoadSpr" + filename);
         //Head
  		head_t head = (head_t)BytesToStruct(filedata, typeof(head_t));
         //Debug.Log(head.width);
@@ -1046,7 +1049,7 @@ public class Utils {
 
         //Palette Colors
         int colors = head.pal_entry_count;
-        Debug.Log("Color: " + colors);
+        //Debug.Log("Color: " + colors);
         Color32[] PaletteColors = new Color32[colors];
         long off = 0;
         fixed (byte* data = &filedata[32]) // sizeof(head_t)
@@ -1074,7 +1077,7 @@ public class Utils {
             {
                 frames[i].offset = *pdata++;
                 frames[i].size = *pdata++;
-                Debug.Log(string.Format("Frames {0}: [{1}, {2}]", i, frames[i].offset, frames[i].size));
+                //Debug.Log(string.Format("Frames {0}: [{1}, {2}]", i, frames[i].offset, frames[i].size));
             }
             off += (byte*)pdata - data;
         }
@@ -1092,11 +1095,12 @@ public class Utils {
                 c += 8;
                 w = spr.Width;
                 h = spr.Height;
-                Debug.Log(string.Format("new frame {0} x {1}", w, h));
+                //Debug.Log(string.Format("new frame {0} x {1}", w, h));
                 Color32[] pixels = new Color32[w * h];
                 int nNumLines = h;
                 int p = 0;
-                for (; nNumLines > 0; nNumLines--)
+                //for (; nNumLines > 0; nNumLines--)
+                for (int l = h - 1; l >= 0; l--)
                 {
                     int nLineLen = w;
                     while (nLineLen > 0)
@@ -1108,6 +1112,7 @@ public class Utils {
                         {
                             try
                             {
+                                //p = l * w + n;
                                 if (nAlpha == 0)
                                 {
                                     pixels[p++] = new Color32(0, 0, 0, 0);
@@ -1120,6 +1125,8 @@ public class Utils {
                             catch (Exception e)
                             {
                                 Debug.LogError(e);
+                                Debug.Log(l);
+                                Debug.Log(n);
                                 Debug.Log(p);
                                 Debug.Log(w * h);
                                 return false;
@@ -1127,16 +1134,25 @@ public class Utils {
                         }
                     }
                 }
-                Debug.Log(p);
-                Debug.Log(c - data);
+                Color32[] pixels2 = new Color32[w * h];
+                for (int l = 0; l < h; l++ )
+                {
+                    for (int k = 0; k < w; k++)
+                    {
+                        pixels2[l * w + k] = pixels[(h - l - 1) * w + k];
+                    }
+                }
+
+                //Debug.Log(p);
+                //Debug.Log(c - data);
                 Texture2D tx = new Texture2D(w, h);
-                tx.SetPixels32(pixels);
+                tx.SetPixels32(pixels2);
                 tx.Apply(false);
 
                 SprResList.Add(tx);
             }
         }
-
+        //Debug.Log(string.Format("Load {0} Done. frame={1}", filename, head.frame_count));
         return true;
     }
 }

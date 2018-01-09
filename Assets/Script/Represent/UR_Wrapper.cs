@@ -50,27 +50,26 @@ public class CoreWrapper
 
     [DllImport("CoreWrapper", EntryPoint = "AOutput", CallingConvention = CallingConvention.StdCall)]
     public static extern void AOutput(FnOutput callback);
-    public delegate void FnOutput(byte[] str);
+    public delegate void FnOutput(IntPtr str);
 
 }
 
-public class URepresentShell : MonoBehaviour {
-
- 
+public class UR_Wrapper : MonoBehaviour {
     //lua_State *lua_open (int stacksize)
     [DllImport("LuaLibDll", CallingConvention = CallingConvention.StdCall)]
     private static extern IntPtr lua_open(int stacksize);
 
-    void Output(byte[] str)
+    void Output(IntPtr bystr)
     {
-        Debug.Log(GLB.GBK.GetString(str));
+        string str = Marshal.PtrToStringAnsi(bystr);
+        //Debug.Log("Output: "+str);
     }
     // Use this for initialization
 	void Start () {
-        //CoreWrapper.AOutput(Output);
+        CoreWrapper.AOutput(Output);
         //GLB.GBK = Encoding.GetEncoding("GB2312");
         //IntPtr o = g_CreateFile(Encoding.Default.GetBytes("ablblabla.bla"));
-        CoreHandler.Init();
+        UR_Register.Init();
         CoreWrapper.Init();
     }
 	

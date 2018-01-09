@@ -11,6 +11,7 @@ using System.Text;
 using byte4 = System.Int32;
 using float3 = Utils.float3;
 using float2 = Utils.float2;
+using System.Runtime.ConstrainedExecution;
 
 //[StructLayoutAttribute(LayoutKind.Sequential, CharSet = CharSet.Ansi, Pack = 4)]
 [StructLayoutAttribute(LayoutKind.Sequential, CharSet = CharSet.Ansi, Pack = 4)]
@@ -230,22 +231,61 @@ public class UnityRepresent
         uint BorderColor = 0 		//字的边缘颜色
     )
     {
+        long uuid = (long)psText;
         string sText = Marshal.PtrToStringAnsi(psText);
-        Debug.Log("OutputText: " + sText);
+        //Debug.Log(string.Format("OutputText: {0} : {1} @ [{2}, {3}]", sText, nCount, nX, nY));
+        float x = (float)nX / 100;
+        float y = 8.0f - (float)nY / 100;
+        float z = zbuff;
+        zbuff -= 0.1f;
+        SprMgr.DrawText(uuid, sText, x, y, z);
         //g_pRepresent->OutputText(12, szDebugRef, KRF_ZERO_END, nX, nY, 0xffffffff, 0, 0);
 
     }
 
-    //public static int OutputRichText(
-    //    int  nFontId, 		//## 使用的字体对象id。
-    //    KOutputTextParam*  pParam, 		//
-    //    IntPtr  psText, 		//## 要输出的字符串。
-    //    int  nCount = KRF_ZERO_END, 		//## 要输出的字符串的长度(BYTE)。\当nCount大于等于0时，字符串可以不包括特殊的结束符号来表示输出字符的结束。\当nCount小于0时，表示此字符串是以'\0'结尾，且中间不存在'\0'的字符。\默认值为-1。
-    //    int  nLineWidth = 0 		//##Documentation\自动换行的行宽限制，如果其值小于一个全角字符宽度则不做自动换行处理。默认值为0，既不做自动换行处理。
-    //)
-    //{
-
-    //}
+    [StructLayoutAttribute(LayoutKind.Sequential, CharSet = CharSet.Ansi, Pack = 4)]
+    struct KOutputTextParam
+    {
+	    public int	nX;
+	    public int	nY;
+	    public int	nZ;
+	    public short 	nSkipLine;
+	    public short 	nNumLine;
+	    public uint Color;
+	    public uint BorderColor;
+        public ushort nVertAlign;	//0:居中/1:上对齐/2:下对齐
+        public ushort nHoriAlign;	//0:居中/1:左对齐/2:右对齐
+	    public int nHoriLen;				//一行的宽度（文字水平对齐的时候的参考量）
+	    public int bPicPackInSingleLine;
+	    public int nPicStretchPercent;
+	    public int	nRowSpacing;			//行间距
+    }
+    public static int OutputRichText(
+        int nFontId, 		//## 使用的字体对象id。
+        IntPtr pParam, 		//
+        IntPtr psText, 		//## 要输出的字符串。
+        int nCount = GLB.KRF_ZERO_END, 		//## 要输出的字符串的长度(BYTE)。\当nCount大于等于0时，字符串可以不包括特殊的结束符号来表示输出字符的结束。\当nCount小于0时，表示此字符串是以'\0'结尾，且中间不存在'\0'的字符。\默认值为-1。
+        int nLineWidth = 0 		//##Documentation\自动换行的行宽限制，如果其值小于一个全角字符宽度则不做自动换行处理。默认值为0，既不做自动换行处理。
+    )
+    {
+        // todo: txt address + xy to uuid
+        long uuid = (long)psText;
+        string sText2 = Marshal.PtrToStringAnsi(psText);
+        byte[] txtbuff = new byte[nCount+1];
+        Marshal.Copy(psText, txtbuff, 0, nCount);
+        string sText = GLB.GBK.GetString(txtbuff);
+        //Debug.Log(sText);
+        KOutputTextParam param = (KOutputTextParam)Marshal.PtrToStructure(pParam, typeof(KOutputTextParam));
+        int nX = param.nX;
+        int nY = param.nY;
+        float x = (float)nX / 100;
+        float y = 8.0f - (float)nY / 100;
+        float z = zbuff;
+        zbuff -= 0.1f;
+        //Debug.Log(string.Format("OutputRichText: {0} : {1} @ [{2}, {3}]", sText, nCount, nX, nY));
+        SprMgr.DrawText(uuid, sText, x, y, z);
+        return 1;
+    }
 
     //public static int LocateRichText(
     //    int  nX , 		//## 指定的坐标
@@ -276,7 +316,8 @@ public class UnityRepresent
     {
         string szName = Marshal.PtrToStringAnsi(pszName);
         Debug.Log("CreateImage: " + szName);
-        return 0;
+        uint imgId = SprMgr.CreateImage(szName, nWidth, nHeight);
+        return imgId;
     }
 
     public static void FreeImage(
@@ -373,6 +414,16 @@ public class UnityRepresent
 
     //}
 
+    [ReliabilityContract(Consistency.WillNotCorruptState, Cer.MayFail)]
+    internal static IntPtr IntPtrOffset(IntPtr pbase, int offset)
+    {
+        if (4 == IntPtr.Size)
+        {
+            return (IntPtr)(pbase.ToInt32() + offset);
+        }
+        return (IntPtr)(pbase.ToInt64() + offset);
+    }
+
     public static void DrawPrimitives(
         int nPrimitiveCount, 		//## 绘制的图元的数目
         IntPtr pPrimitives, 		//## 描述图元的结构的数组
@@ -380,7 +431,7 @@ public class UnityRepresent
         int bSinglePlaneCoord 		//## 图元绘制操作提供的坐标是否为垂直与视线的单平面坐标。如果不是，则图元绘制操作提供的坐标是三维空间坐标。
     )
     {
-        Debug.Log("DrawPrimitives: ");
+        //Debug.Log("DrawPrimitives: ");
         switch (uGenre)
         {
         case (int)REPRESENT_UNIT_TYPE.RU_T_IMAGE:
@@ -388,26 +439,36 @@ public class UnityRepresent
         case (int)REPRESENT_UNIT_TYPE.RU_T_IMAGE_4:
         case (int)REPRESENT_UNIT_TYPE.RU_T_IMAGE_STRETCH:
         {
-            long uuid = (long)pPrimitives;
-            pic_cmd_t cmds = (pic_cmd_t)Marshal.PtrToStructure(pPrimitives, typeof(pic_cmd_t));
-            //Debug.Log("uuid: " + uuid + ", Type: " + uGenre);
-            //Debug.Log(GLB.GBK.GetString(cmds.filename));
-            cmds.pos1.x /= 100;
-            cmds.pos1.y /= 100;
-            cmds.pos1.y = 8.0f - cmds.pos1.y;
-            cmds.pos1.z /= 100;
-            cmds.pos1.z += zbuff;
-            zbuff -= 0.1f;
-            //Debug.Log(string.Format("Image: {0},{4} at [{1},{2},{3}]", "", cmds.pos1.x, cmds.pos1.y, cmds.pos1.z, cmds.frame_index));
-            if (cmds.filename[0] == 0)
-                break;
-            SprMgr.DrawSpr(uuid, cmds);
+            IntPtr pSpr = pPrimitives;
+            for (int n = 0; n < nPrimitiveCount; n++, IntPtrOffset(pSpr, IntPtr.Size))
+            {
+                long uuid = (long)pSpr;
+                pic_cmd_t cmds = (pic_cmd_t)Marshal.PtrToStructure(pSpr, typeof(pic_cmd_t));
+                //Debug.Log("uuid: " + uuid + ", Type: " + uGenre);
+                //Debug.Log(GLB.GBK.GetString(cmds.filename));
+                cmds.pos1.x /= 100;
+                cmds.pos1.y /= 100;
+                cmds.pos1.y = 8.0f - cmds.pos1.y;
+                cmds.pos1.z /= 100;
+                cmds.pos1.z += zbuff;
+                zbuff -= 0.1f;
+                //Debug.Log(string.Format("Image: {0},{4} at [{1},{2},{3}]", "", cmds.pos1.x, cmds.pos1.y, cmds.pos1.z, cmds.frame_index));
+                if (cmds.filename[0] == 0)
+                    break;
+                SprMgr.DrawSpr(uuid, cmds);
+            }
         }
         break;
         case (int)REPRESENT_UNIT_TYPE.RU_T_MODEL:
         {
+            long uuid = (long)pPrimitives;
             space_obj_primitive_cmd_t cmds = (space_obj_primitive_cmd_t)Marshal.PtrToStructure(pPrimitives, typeof(space_obj_primitive_cmd_t));
-
+            cmds.pos.x /= 100;
+            cmds.pos.y /= 100;
+            cmds.pos.y = 8.0f - cmds.pos.y;
+            cmds.pos.z += zbuff;
+            zbuff += 0.1f;
+            //SprMgr.DrawModel(uuid, cmds);
         }
         break;
         }
@@ -484,6 +545,8 @@ public class UnityRepresent
         uint Color 		//## 如果bClear为非0值，则Color指出用什么颜色值来清除设备原来的图形。
     )
     {
+        if (SprMgr.GetInstance() != null)
+            SprMgr.GetInstance().Swap();
         zbuff = 0f;
         return true;
     }
@@ -541,7 +604,7 @@ public class UnityRepresent
     {
         //RepresentObject Obj;
         string objName = Marshal.PtrToStringAnsi(pObjectName);
-        Debug.Log("CreateRepresentObject: ");
+        Debug.Log("CreateRepresentObject: " + objName);
         return IntPtr.Zero;
     }
 
